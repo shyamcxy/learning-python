@@ -1,46 +1,18 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
+from pydantic import BaseModel, Field
 
 app = FastAPI()
 
-users = [
-    {
-        "user_id": 123,
-        "name": "Shyam",
-    },
-    {"user_id": 132, "name": "Shyam"},
-    {"user_id": 124, "name": "Ram"},
-    {"user_id": 125, "name": "Dev"},
-    {"user_id": 126, "name": "Kajal"},
-]
+
+class User(BaseModel):
+    user_id: int = Field(gt=0)
+    name: str = Field(min_length=2, max_length=30)
+    nickname: str | None = Field(default=None, min_length=3, max_length=20)
+    age: int = Field(ge=18, le=120)
+    email: str = Field(description="The user's contact email")
 
 
-@app.get("/")
-def root():
-    return {"message": "Hello Shyam"}
-
-
-@app.get("/users/{user_id}")
-def get_user(user_id: int):
-
-    for user in users:
-        if user["user_id"] == user_id:
-            return user
-
-    raise HTTPException(status_code=404, detail="User not found")
-
-
-@app.get("/search-users")
-def search_users(name: str | None = None, limit: int = 2):
-    if name is None:
-        return users[:limit]
-
-    results = []
-
-    for user in users:
-        if user["name"].lower() == name.lower():
-            results.append(user)
-
-    if results:
-        return results[:limit]
-
-    raise HTTPException(status_code=404, detail="No user found")
+@app.post("/create-user")
+def create_user(new_user: User):
+    user = new_user.model_dump()
+    return user
